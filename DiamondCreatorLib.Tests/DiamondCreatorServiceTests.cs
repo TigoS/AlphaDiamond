@@ -319,6 +319,236 @@ public class DiamondCreatorServiceTests
         Assert.Throws<DiamondCreatorException>(() => _sut.CreateDiamond('B'));
     }
 
+    #region Default State Tests
+
+    [Test()]
+    public void DefaultStateTest_NewInstance_AlphabetShouldBeUppercaseEnglishAZ()
+    {
+        // ARRANGE
+        var service = new DiamondCreatorService();
+
+        // ASSERT
+        Assert.AreEqual("ABCDEFGHIJKLMNOPQRSTUVWXYZ", service.Alphabet);
+    }
+
+    [Test()]
+    public void DefaultStateTest_NewInstance_WhitespaceVisualizerShouldBeUnderscore()
+    {
+        // ARRANGE
+        var service = new DiamondCreatorService();
+
+        // ASSERT
+        Assert.AreEqual('_', service.WhitespaceVisualizer);
+    }
+
+    [Test()]
+    public void DefaultStateTest_NewInstance_TargetLetterShouldBeDefaultChar()
+    {
+        // ARRANGE
+        var service = new DiamondCreatorService();
+
+        // ASSERT
+        Assert.AreEqual('\0', service.TargetLetter);
+    }
+
+    #endregion
+
+    #region Additional CreateDiamond Tests
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabetUppercaseAZ_WhenCreatingForLetterD_ShouldReturnTheCorrectDiamond()
+    {
+        // ACT
+        var diamond = _sut.CreateDiamond('D');
+
+        // ASSERT
+        Assert.AreEqual("_ _ _ A _ _ _" + Environment.NewLine +
+                        "_ _ B _ B _ _" + Environment.NewLine +
+                        "_ C _ _ _ C _" + Environment.NewLine +
+                        "D _ _ _ _ _ D" + Environment.NewLine +
+                        "_ C _ _ _ C _" + Environment.NewLine +
+                        "_ _ B _ B _ _" + Environment.NewLine +
+                        "_ _ _ A _ _ _" + Environment.NewLine, diamond);
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabetUppercaseAZ_WhenCreatingForLetterD_ShouldReturnDiamondWith7Rows()
+    {
+        // ACT
+        var diamond = _sut.CreateDiamond('D');
+        var rows = diamond.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        // ASSERT
+        Assert.AreEqual(7, rows.Length);
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabetUppercaseAZ_WhenCreatingForLetterZ_ShouldReturnDiamondWith51Rows()
+    {
+        // ACT
+        var diamond = _sut.CreateDiamond('Z');
+        var rows = diamond.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        // ASSERT
+        Assert.AreEqual(51, rows.Length);
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabetUppercaseAZ_WhenCreatingForLetterD_FirstAndLastRowsShouldBeIdentical()
+    {
+        // ACT
+        var diamond = _sut.CreateDiamond('D');
+        var rows = diamond.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        // ASSERT
+        Assert.AreEqual(rows[0], rows[rows.Length - 1]);
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabetUppercaseAZ_WhenCreatingForLetterE_DiamondShouldBeVerticallySymmetric()
+    {
+        // ACT
+        var diamond = _sut.CreateDiamond('E');
+        var rows = diamond.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        // ASSERT
+        for (int i = 0; i < rows.Length; i++)
+        {
+            Assert.AreEqual(rows[i], rows[rows.Length - 1 - i]);
+        }
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabetUppercaseAZ_WhenCreatingForLetterD_WidestRowShouldContainTargetLetterAtBothEnds()
+    {
+        // ACT
+        var diamond = _sut.CreateDiamond('D');
+        var rows = diamond.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        int middleIndex = rows.Length / 2;
+
+        // ASSERT
+        Assert.That(rows[middleIndex], Does.StartWith("D"));
+        Assert.That(rows[middleIndex], Does.EndWith("D"));
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabetUppercaseAZ_WhenCreatingForLetterD_AllRowsShouldHaveSameWidth()
+    {
+        // ACT
+        var diamond = _sut.CreateDiamond('D');
+        var rows = diamond.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+
+        // ASSERT
+        int expectedWidth = rows[0].Length;
+        foreach (var row in rows)
+        {
+            Assert.AreEqual(expectedWidth, row.Length);
+        }
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenSingleLetterAlphabetX_WhenCreatingForLetterX_ShouldReturnSingleLetterDiamond()
+    {
+        // ACT
+        _sut.DefineAlphabet('X', 'X');
+        var diamond = _sut.CreateDiamond('X');
+
+        // ASSERT
+        Assert.AreEqual("X" + Environment.NewLine, diamond);
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenGapAlphabetACE_WhenCreatingForLetterD_ShouldThrowException()
+    {
+        // ACT
+        _sut.DefineAlphabet("ACE");
+
+        // ACT & ASSERT
+        Assert.Throws<DiamondCreatorException>(() => _sut.CreateDiamond('D'));
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenCustomAlphabetDF_WhenCreatingForLetterBeforeRange_ShouldThrowException()
+    {
+        // ACT
+        _sut.DefineAlphabet('D', 'F');
+
+        // ACT & ASSERT
+        Assert.Throws<DiamondCreatorException>(() => _sut.CreateDiamond('A'));
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenCustomAlphabetDF_WhenCreatingForLetterAfterRange_ShouldThrowException()
+    {
+        // ACT
+        _sut.DefineAlphabet('D', 'F');
+
+        // ACT & ASSERT
+        Assert.Throws<DiamondCreatorException>(() => _sut.CreateDiamond('Z'));
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenNumericAlphabet1To9_WhenCreatingForNumber1_ShouldReturnSingleDigitDiamond()
+    {
+        // ACT
+        _sut.DefineAlphabet('1', '9');
+        var diamond = _sut.CreateDiamond('1');
+
+        // ASSERT
+        Assert.AreEqual("1" + Environment.NewLine, diamond);
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabet_WhenCreatingMultipleDiamonds_TargetLetterShouldReflectLastCall()
+    {
+        // ACT
+        _sut.CreateDiamond('A');
+        _sut.CreateDiamond('C');
+
+        // ASSERT
+        Assert.AreEqual('C', _sut.TargetLetter);
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabet_WhenCreatingForLetterE_TargetLetterPropertyShouldBeE()
+    {
+        // ACT
+        _sut.CreateDiamond('E');
+
+        // ASSERT
+        Assert.AreEqual('E', _sut.TargetLetter);
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabet_WhenChangingVisualizerToSpaceAndCreatingForLetterB_ShouldReturnCorrectDiamond()
+    {
+        // ACT
+        _sut.WhitespaceVisualizer = ' ';
+        var diamond = _sut.CreateDiamond('B');
+
+        // ASSERT
+        Assert.AreEqual("  A  " + Environment.NewLine +
+                        "B   B" + Environment.NewLine +
+                        "  A  " + Environment.NewLine, diamond);
+    }
+
+    [Test()]
+    public void CreateDiamondTest_GivenDefaultAlphabet_WhenChangingVisualizerToDotAndCreatingForLetterC_ShouldReturnCorrectDiamond()
+    {
+        // ACT
+        _sut.WhitespaceVisualizer = '.';
+        var diamond = _sut.CreateDiamond('C');
+
+        // ASSERT
+        Assert.AreEqual(". . A . ." + Environment.NewLine +
+                        ". B . B ." + Environment.NewLine +
+                        "C . . . C" + Environment.NewLine +
+                        ". B . B ." + Environment.NewLine +
+                        ". . A . ." + Environment.NewLine, diamond);
+    }
+
+    #endregion
+
     [OneTimeTearDown()]
     public void CleanUp()
     {
