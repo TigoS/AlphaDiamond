@@ -4,6 +4,7 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
+[![Coverage](https://img.shields.io/badge/coverage-97.5%25-brightgreen)]()
 [![BenchmarkDotNet](https://img.shields.io/badge/benchmarks-BenchmarkDotNet-blue)](https://benchmarkdotnet.org/)
 
 A **.NET 10** solution for generating text-based **diamond patterns** from any ordered alphabet. Given a target letter and an alphabet, it produces a symmetrical diamond shape where the first symbol appears at the top and bottom vertices and the target letter appears at the widest horizontal row. Supports custom alphabets (uppercase, lowercase, numeric, mixed symbols), configurable whitespace visualization, and dependency injection via `Microsoft.Extensions.DependencyInjection`.
@@ -57,7 +58,8 @@ The diamond is rendered as a square matrix where each character is separated by 
 - **Dependency injection** — `IDiamondCreatorService` / `DiamondCreatorService` registered via `Microsoft.Extensions.DependencyInjection`
 - **Custom exception type** — `DiamondCreatorException` with resource-based error message formatting
 - **Resource-based strings** — error messages and alphabet constants stored in `.resx` files for maintainability
-- **30 unit tests** with NUnit 4 covering alphabet definition, diamond creation, and error handling
+- **60 unit tests** with NUnit 4 covering alphabet definition, diamond creation, exception handling, and structural properties
+- **97.5% line coverage** measured with [Coverlet](https://github.com/coverlet-coverage/coverlet)
 - **BenchmarkDotNet integration** for performance measurement across initialization, alphabet definition, and diamond creation
 - **Full XML documentation** for IntelliSense support
 
@@ -269,11 +271,37 @@ Where `K` is any single letter from the English alphabet (A–Z). The letter is 
 
 ## Testing
 
-The solution includes **30 unit tests** written with **NUnit 4**, covering all aspects of the `DiamondCreatorService` class.
+The solution includes **60 unit tests** written with **NUnit 4**, covering `DiamondCreatorService` behavior and `DiamondCreatorException` construction.
 
 ```shell
 dotnet test
 ```
+
+### Code Coverage
+
+Code coverage is collected with [Coverlet](https://github.com/coverlet-coverage/coverlet) (via `coverlet.msbuild`). Auto-generated resource accessors are excluded.
+
+```shell
+dotnet test DiamondCreatorLib.Tests/DiamondCreatorLib.Tests.csproj \
+  /p:CollectCoverage=true \
+  /p:CoverletOutputFormat=cobertura \
+  /p:Include="[DiamondCreatorLib]*" \
+  /p:ExcludeByAttribute="GeneratedCodeAttribute%2cCompilerGeneratedAttribute" \
+  /p:CoverletOutput=./TestResults/coverage.cobertura.xml
+```
+
+#### Summary
+
+| Module | Line | Branch | Method |
+|---|---|---|---|
+| **DiamondCreatorLib** | **97.5%** | **95.4%** | **100%** |
+
+#### Per-Class Breakdown
+
+| Class | Line | Branch | Uncovered Lines |
+|---|---|---|---|
+| `DiamondCreatorService` | 96.8% | 95.4% | Defensive `Alphabet is null` guard (unreachable) |
+| `DiamondCreatorException` | 100% | 100% | — |
 
 ### Test Coverage by Category
 
@@ -281,17 +309,21 @@ dotnet test
 |---|---|---|
 | `DefineAlphabetByFirstAndLastLettersTest` | 12 | Alphabet definition via char range: uppercase, lowercase, numeric, reverse order, same values, cross-case |
 | `DefineAlphabetByStringTest` | 10 | Alphabet definition via string: ordering, deduplication, whitespace stripping, null/empty/whitespace-only |
-| `CreateDiamondTest` | 8 | Diamond creation: single letter, multi-row, custom alphabets, custom visualizer, invalid letters |
+| `CreateDiamondTest` | 24 | Diamond creation: full output, row count, symmetry, uniform width, widest row, custom visualizers, gap alphabets, boundary targets, numeric alphabets, property state |
+| `DefaultStateTest` | 3 | Default property values: alphabet, whitespace visualizer, target letter |
+| `DiamondCreatorExceptionTest` | 11 | All constructors (message, format+args, inner exception, serialization), resource pattern, exception details from service operations |
 | | | |
-| **Total** | **30 tests** | |
+| **Total** | **60 tests** | |
 
 ### Test Categories
 
 | Category | Description | Examples |
 |---|---|---|
-| **Unit** | Individual method behavior | Alphabet construction, diamond string output |
-| **Edge Cases** | Boundary conditions and error handling | Single-letter alphabet, reversed range, null/empty input, cross-case ranges |
-| **Validation** | Input rejection and exception throwing | Invalid letters, out-of-alphabet targets, whitespace-only strings |
+| **Unit** | Individual method behavior | Alphabet construction, diamond string output, exception construction |
+| **Structural** | Diamond geometric properties | Row count, vertical symmetry, uniform row width, widest row identification |
+| **Edge Cases** | Boundary conditions and error handling | Single-letter alphabet, reversed range, null/empty input, cross-case ranges, gap alphabets |
+| **Validation** | Input rejection and exception throwing | Invalid letters, out-of-alphabet targets, whitespace-only strings, target before/after range |
+| **Serialization** | Legacy serialization support | Serialization constructor via reflection, `ISerializable.GetObjectData` |
 
 ## Benchmarks
 
