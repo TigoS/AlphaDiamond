@@ -1,3 +1,4 @@
+using System.Runtime.Serialization;
 using DiamondCreatorLib.Utils;
 using NUnit.Framework;
 
@@ -110,5 +111,50 @@ public class DiamondCreatorExceptionTests
         var ex = Assert.Throws<DiamondCreatorException>(() => service.CreateDiamond('D'));
         Assert.That(ex!.Message, Does.Contain("D"));
         Assert.That(ex.Message, Does.Contain("ACE"));
+    }
+
+    [Test()]
+    public void DiamondCreatorExceptionTest_SerializationConstructor_ShouldCreateInstanceViaReflection()
+    {
+        // ARRANGE
+        var info = new SerializationInfo(typeof(DiamondCreatorException), new FormatterConverter());
+        var context = new StreamingContext(StreamingContextStates.All);
+
+        info.AddValue("ClassName", typeof(DiamondCreatorException).FullName);
+        info.AddValue("Message", "Test serialization");
+        info.AddValue("InnerException", null, typeof(Exception));
+        info.AddValue("HelpURL", string.Empty);
+        info.AddValue("StackTraceString", null, typeof(string));
+        info.AddValue("RemoteStackTraceString", null, typeof(string));
+        info.AddValue("RemoteStackIndex", 0);
+        info.AddValue("ExceptionMethod", null, typeof(string));
+        info.AddValue("HResult", -2146233088);
+        info.AddValue("Source", null, typeof(string));
+
+        // ACT
+        var ctor = typeof(DiamondCreatorException).GetConstructor(
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance,
+            null,
+            [typeof(SerializationInfo), typeof(StreamingContext)],
+            null);
+
+        // ASSERT
+        Assert.That(ctor, Is.Not.Null);
+        var ex = (DiamondCreatorException)ctor!.Invoke([info, context]);
+        Assert.That(ex, Is.Not.Null);
+        Assert.That(ex.Message, Does.Contain("Test serialization"));
+    }
+
+    [Test()]
+    public void DiamondCreatorExceptionTest_GetObjectData_ShouldPopulateSerializationInfo()
+    {
+        // ARRANGE
+        var original = new DiamondCreatorException("serialization test");
+        var info = new SerializationInfo(typeof(DiamondCreatorException), new FormatterConverter());
+        var context = new StreamingContext(StreamingContextStates.All);
+
+        // ACT & ASSERT
+        Assert.DoesNotThrow(() => ((ISerializable)original).GetObjectData(info, context));
+        Assert.That(info.GetString("Message"), Does.Contain("serialization test"));
     }
 }
